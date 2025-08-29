@@ -7,7 +7,15 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type Payload struct {
+// Producer is an interface that wraps the confluent-kafka-go producer.
+type Producer interface {
+	Produce(msg *kafka.Message, deliveryChan chan kafka.Event) error
+	Events() chan kafka.Event
+	Flush(timeoutMs int) int
+	Close()
+}
+
+type Message struct {
 	Key     string
 	Headers map[string]string
 	Content []byte
@@ -15,12 +23,16 @@ type Payload struct {
 
 // Repository Kafka repository.
 type Repository struct {
-	producer *kafka.Producer
+	producer Producer
 	topic    string
 }
 
 func NewRepository(cfg Config) (*Repository, error) {
-	p, err := kafka.NewProducer(&kafka.ConfigMap{"bootstrap.servers": cfg.KafkaBroker})
+	if cfg.KafkaBroker == "" {
+		log.Warn().Msg("Kafka broker is not configured; Kafka is disabled.")
+		return nil, nil
+	}
+	p, err := newProducer(&kafka.ConfigMap{"bootstrap.servers": cfg.KafkaBroker})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Kafka producer: %w", err)
 	}
@@ -33,8 +45,12 @@ func NewRepository(cfg Config) (*Repository, error) {
 	}, nil
 }
 
+var newProducer func(configMap *kafka.ConfigMap) (Producer, error) = func(configMap *kafka.ConfigMap) (Producer, error) {
+	return kafka.NewProducer(configMap)
+}
+
 // Send a message to a Kafka topic.
-func (r *Repository) Send(ctx context.Context, payload Payload) error {
+func (r *Repository) Send(ctx context.Context, payload Message) error {
 	if r.producer == nil {
 		log.Warn().Msg("Kafka producer is not initialized; cannot send messages.")
 		return nil

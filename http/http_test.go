@@ -3,7 +3,6 @@ package http
 import (
 	"context"
 	"encoding/json"
-	config2 "github.com/narumayase/anysher/config"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -36,17 +35,22 @@ func TestHttpClientImpl_Post(t *testing.T) {
 		}))
 		defer server.Close()
 
-		config := config2.Config{
+		config := Config{
 			LogLevel: "info",
 		}
 
 		// Create a new HTTP client with the test server's URL
 		client := NewClient(server.Client(), config)
 
+		// Create a sample payload
+		payload := map[string]string{"test-key": "test-value"}
+		payloadBytes, _ := json.Marshal(payload)
+
 		resp, err := client.Post(context.Background(), Payload{
-			URL:     "",
-			Token:   "",
+			URL:     server.URL,
+			Token:   "test-token",
 			Headers: map[string]string{"Content-Type": "application/json"},
+			Content: payloadBytes,
 		})
 		assert.NoError(t, err)
 		assert.NotNil(t, resp)
@@ -57,40 +61,20 @@ func TestHttpClientImpl_Post(t *testing.T) {
 		assert.Equal(t, "success", respBody["message"])
 	})
 
-	t.Run("error during json.Marshal", func(t *testing.T) {
-		config := config2.Config{
-			LogLevel: "info",
-		}
-		client := NewClient(&http.Client{}, config)
-
-		// Use a payload that cannot be marshaled to JSON (e.g., a channel)
-		//	payload := make(chan int)
-		//	headers := map[string]string{"Content-Type": "application/json"}
-
-		resp, err := client.Post(context.Background(), Payload{
-			URL:     "",
-			Token:   "",
-			Headers: map[string]string{"Content-Type": "application/json"},
-		})
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "failed to marshal payload")
-		assert.Nil(t, resp)
-	})
+	
 
 	t.Run("error during http.NewRequest", func(t *testing.T) {
-		config := config2.Config{
+		config := Config{
 			LogLevel: "info",
 		}
 		client := NewClient(&http.Client{}, config)
 
 		// Use an invalid URL to cause an error during NewRequest
-		//payload := map[string]string{"test-key": "test-value"}
-		//headers := map[string]string{"Content-Type": "application/json"}
-
 		resp, err := client.Post(context.Background(), Payload{
-			URL:     "",
-			Token:   "",
+			URL:     ":",
+			Token:   "test-token",
 			Headers: map[string]string{"Content-Type": "application/json"},
+			Content: []byte("{}"),
 		}) // Invalid URL
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "failed to create request")
@@ -104,13 +88,19 @@ func TestHttpClientImpl_Post(t *testing.T) {
 				return nil, assert.AnError
 			},
 		}
+
+		config := Config{
+			LogLevel: "info",
+		}
 		mockClient := &http.Client{Transport: mockRT}
-		client := NewHttpClient(mockClient, "test-token")
+		client := NewClient(mockClient, config)
 
-		payload := map[string]string{"test-key": "test-value"}
-		headers := map[string]string{"Content-Type": "application/json"}
-
-		resp, err := client.Post(context.Background(), headers, payload, "http://example.com")
+		resp, err := client.Post(context.Background(), Payload{
+			URL:     "http://example.com",
+			Token:   "test-token",
+			Headers: map[string]string{"Content-Type": "application/json"},
+			Content: []byte("{}"),
+		})
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "failed to execute request")
 		assert.Nil(t, resp)

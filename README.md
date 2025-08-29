@@ -35,7 +35,7 @@ func main() {
 	defer kafkaRepo.Close()
 
 	// Create a payload
-	payload := kafka.Payload{
+	payload := kafka.Message{
 		Key:     "somekey",
 		Headers: map[string]string{"correlation_id": "123456"},
 		Content: []byte("Hello, Kafka!"),
