@@ -1,9 +1,9 @@
-package repository
+package http
 
 import (
-	"anysher/internal/domain"
 	"context"
 	"encoding/json"
+	config2 "github.com/narumayase/anysher/config"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -36,13 +36,18 @@ func TestHttpClientImpl_Post(t *testing.T) {
 		}))
 		defer server.Close()
 
+		config := config2.Config{
+			LogLevel: "info",
+		}
+
 		// Create a new HTTP client with the test server's URL
-		client := NewHttpClient(server.Client())
+		client := NewClient(server.Client(), config)
 
-		payload := map[string]string{"test-key": "test-value"}
-		headers := map[string]string{"Content-Type": "application/json"}
-
-		resp, err := client.Post(context.Background(), headers, payload, server.URL)
+		resp, err := client.Post(context.Background(), Payload{
+			URL:     "",
+			Token:   "",
+			Headers: map[string]string{"Content-Type": "application/json"},
+		})
 		assert.NoError(t, err)
 		assert.NotNil(t, resp)
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
@@ -53,26 +58,40 @@ func TestHttpClientImpl_Post(t *testing.T) {
 	})
 
 	t.Run("error during json.Marshal", func(t *testing.T) {
-		client := NewHttpClient(&http.Client{}, "test-token")
+		config := config2.Config{
+			LogLevel: "info",
+		}
+		client := NewClient(&http.Client{}, config)
 
 		// Use a payload that cannot be marshaled to JSON (e.g., a channel)
-		payload := make(chan int)
-		headers := map[string]string{"Content-Type": "application/json"}
+		//	payload := make(chan int)
+		//	headers := map[string]string{"Content-Type": "application/json"}
 
-		resp, err := client.Post(context.Background(), headers, payload, "http://example.com")
+		resp, err := client.Post(context.Background(), Payload{
+			URL:     "",
+			Token:   "",
+			Headers: map[string]string{"Content-Type": "application/json"},
+		})
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "failed to marshal payload")
 		assert.Nil(t, resp)
 	})
 
 	t.Run("error during http.NewRequest", func(t *testing.T) {
-		client := NewHttpClient(&http.Client{}, "test-token")
+		config := config2.Config{
+			LogLevel: "info",
+		}
+		client := NewClient(&http.Client{}, config)
 
 		// Use an invalid URL to cause an error during NewRequest
-		payload := map[string]string{"test-key": "test-value"}
-		headers := map[string]string{"Content-Type": "application/json"}
+		//payload := map[string]string{"test-key": "test-value"}
+		//headers := map[string]string{"Content-Type": "application/json"}
 
-		resp, err := client.Post(context.Background(), headers, payload, "\n") // Invalid URL
+		resp, err := client.Post(context.Background(), Payload{
+			URL:     "",
+			Token:   "",
+			Headers: map[string]string{"Content-Type": "application/json"},
+		}) // Invalid URL
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "failed to create request")
 		assert.Nil(t, resp)

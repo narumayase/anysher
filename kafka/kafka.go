@@ -1,21 +1,25 @@
-package repository
+package kafka
 
 import (
-	"anysher/config"
-	"anysher/internal/domain"
 	"context"
 	"fmt"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/rs/zerolog/log"
 )
 
-// KafkaRepository implements the ProducerRepository interface for Kafka.
-type KafkaRepository struct {
+type Payload struct {
+	Key     string
+	Headers map[string]string
+	Content []byte
+}
+
+// Repository Kafka repository.
+type Repository struct {
 	producer *kafka.Producer
 	topic    string
 }
 
-func NewKafkaRepository(cfg config.Config) (domain.ProducerRepository, error) {
+func NewRepository(cfg Config) (*Repository, error) {
 	p, err := kafka.NewProducer(&kafka.ConfigMap{"bootstrap.servers": cfg.KafkaBroker})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Kafka producer: %w", err)
@@ -23,14 +27,14 @@ func NewKafkaRepository(cfg config.Config) (domain.ProducerRepository, error) {
 
 	log.Info().Msgf("Successfully created Kafka producer for brokers: %s", cfg.KafkaBroker)
 
-	return &KafkaRepository{
+	return &Repository{
 		producer: p,
 		topic:    cfg.KafkaTopic,
 	}, nil
 }
 
 // Send a message to a Kafka topic.
-func (r *KafkaRepository) Send(ctx context.Context, payload domain.Payload) error {
+func (r *Repository) Send(ctx context.Context, payload Payload) error {
 	if r.producer == nil {
 		log.Warn().Msg("Kafka producer is not initialized; cannot send messages.")
 		return nil
@@ -70,7 +74,7 @@ func (r *KafkaRepository) Send(ctx context.Context, payload domain.Payload) erro
 }
 
 // Close closes the Kafka producer.
-func (r *KafkaRepository) Close() {
+func (r *Repository) Close() {
 	if r.producer != nil {
 		r.producer.Close()
 	}

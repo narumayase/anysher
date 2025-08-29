@@ -1,8 +1,6 @@
-package repository
+package http
 
 import (
-	"anysher/config"
-	"anysher/internal/domain"
 	"bytes"
 	"context"
 	"fmt"
@@ -10,27 +8,28 @@ import (
 	"net/http"
 )
 
-// HTTPClientImpl HttpClientImpl implements HttpClient interface for making HTTP requests
-type HTTPClientImpl struct {
+type Payload struct {
+	URL     string
+	Token   string
+	Headers map[string]string
+	Content []byte
+}
+
+type Client struct {
 	client *http.Client
-	config config.Config
+	config Config
 }
 
-// HttpClient defines the interface for making HTTP requests
-type HttpClient interface {
-	Post(ctx context.Context, payload domain.Payload) (*http.Response, error)
-}
-
-// NewHttpClient creates a new HTTP client with bearer token authentication
-func NewHttpClient(client *http.Client, config config.Config) HttpClient {
-	return &HTTPClientImpl{
+// NewClient creates a new HTTP client with bearer token authentication
+func NewClient(client *http.Client, config Config) *Client {
+	return &Client{
 		client: client,
 		config: config,
 	}
 }
 
 // Post sends a POST request with JSON payload and bearer token authentication
-func (c *HTTPClientImpl) Post(ctx context.Context, payload domain.Payload) (*http.Response, error) {
+func (c *Client) Post(ctx context.Context, payload Payload) (*http.Response, error) {
 	payloadContent := payload.Content
 	url := payload.URL
 	headers := payload.Headers

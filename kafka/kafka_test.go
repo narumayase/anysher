@@ -1,9 +1,8 @@
-package repository
+package kafka
 
 import (
-	"anysher/config"
-	"anysher/internal/domain"
 	"context"
+	"github.com/narumayase/anysher/config"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -11,19 +10,17 @@ import (
 
 func TestNewKafkaRepository_KafkaDisabled(t *testing.T) {
 	cfg := config.Config{}
-	repo, err := NewKafkaRepository(cfg)
+	repo, err := NewRepository(cfg)
 	assert.NoError(t, err)
 	assert.Nil(t, repo)
 }
 
 func TestKafkaRepository_Produce_NilProducer(t *testing.T) {
-	repo := &KafkaRepository{}
+	repo := &Repository{}
 	ctx := context.Background()
 
-	payload := domain.Payload{
-		KafkaPayload: domain.KafkaPayload{
-			Key: "key",
-		},
+	payload := Payload{
+		Key:     "key",
 		Content: []byte("test message"),
 	}
 
@@ -32,7 +29,7 @@ func TestKafkaRepository_Produce_NilProducer(t *testing.T) {
 }
 
 func TestKafkaRepository_Close_NilProducer(t *testing.T) {
-	repo := &KafkaRepository{}
+	repo := &Repository{}
 	// Should not panic or cause an error
 	repo.Close()
 }

@@ -18,34 +18,32 @@ Para utilizar la librería, puedes crear una instancia de `KafkaRepository` o `H
 package main
 
 import (
-	"anysher/config"
-	"anysher/internal/domain"
-	"anysher/internal/infrastructure/repository"
 	"context"
+	"github.com/narumayase/anysher/kafka"
 	"github.com/rs/zerolog/log"
 )
 
 func main() {
-	// Crear configuración de Kafka
-	cfg := config.NewKafkaConfiguration("localhost:9092","un-tema", "info")
+	// Create Kafka configuration
+	cfg := kafka.NewConfiguration("localhost:9092", "a-topic", "info")
 
-	// Crear un nuevo repositorio de Kafka
-	kafkaRepo, err := repository.NewKafkaRepository(cfg)
+	// Create a new Kafka repository
+	kafkaRepo, err := kafka.NewRepository(cfg)
 	if err != nil {
-		//log.Fatalf("Error al crear el repositorio de Kafka: %v", err)
+		//log.Fatalf("Failed to create Kafka http: %v", err)
 	}
 	defer kafkaRepo.Close()
 
-	// Crear un payload
-	payload := domain.Payload{
-		KafkaPayload: domain.KafkaPayload{Key: "una-clave"},
-		Headers:      map[string]string{"correlation_id": "123456"},
-		Content:      []byte("¡Hola, Kafka!"),
+	// Create a payload
+	payload := kafka.Payload{
+		Key:     "somekey",
+		Headers: map[string]string{"correlation_id": "123456"},
+		Content: []byte("Hello, Kafka!"),
 	}
 
-	// Enviar el mensaje
+	// Send the message
 	if err := kafkaRepo.Send(context.Background(), payload); err != nil {
-		log.Err(err).Msg("Error al enviar el mensaje a Kafka")
+		log.Err(err).Msg("Failed to send message to Kafka")
 	}
 }
 ```
@@ -56,33 +54,29 @@ func main() {
 package main
 
 import (
-	"anysher/internal/domain"
-	"anysher/internal/infrastructure/repository"
 	"context"
+	"github.com/narumayase/anysher/http"
 	"log"
-	"net/http"
+	nethttp "net/http"
 )
 
 func main() {
-	// Crear configuración HTTP
-	cfg := config.NewHTTPConfiguration("info")
-	
-	// Crear un nuevo cliente HTTP
-	httpClient := repository.NewHttpClient(&http.Client{}, cfg)
+	// Create HTTP configuration
+	cfg := http.NewConfiguration("info")
 
-	// Crear un payload
-	payload := domain.Payload{
-		HTTPPayload:  domain.HTTPPayload{
-			URL:   "http://localhost:8080",
-			Token: "un_bearer_token",
-		},
-		Headers:      map[string]string{"Content-Type": "application/json"},
-		Content:      []byte("{\"¡Hola, HTTP!\"}"),
+	// Create a new HTTP client
+	httpClient := http.NewClient(&nethttp.Client{}, cfg)
+
+	// Create a payload
+	payload := http.Payload{
+		URL:   "http://localhost:8080",
+		Token: "a_bearer_token",
+		Headers: map[string]string{"Content-Type": "application/json"},
+		Content: []byte("{\"Hello, HTTP!\"}"),
 	}
-
-	// Enviar el mensaje
+	// Post the payload
 	if _, err := httpClient.Post(context.Background(), payload); err != nil {
-		log.Printf("Error al enviar el mensaje a través de HTTP: %v", err)
+		log.Printf("Failed to send message via HTTP: %v", err)
 	}
 }
 ```

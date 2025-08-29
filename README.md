@@ -18,29 +18,27 @@ To use the library, you can create an instance of either `KafkaRepository` or `H
 package main
 
 import (
-	"anysher/config"
-	"anysher/internal/domain"
-	"anysher/internal/infrastructure/repository"
 	"context"
+	"github.com/narumayase/anysher/kafka"
 	"github.com/rs/zerolog/log"
 )
 
 func main() {
 	// Create Kafka configuration
-	cfg := config.NewKafkaConfiguration("localhost:9092","a-topic", "info")
+	cfg := kafka.NewConfiguration("localhost:9092", "a-topic", "info")
 
 	// Create a new Kafka repository
-	kafkaRepo, err := repository.NewKafkaRepository(cfg)
+	kafkaRepo, err := kafka.NewRepository(cfg)
 	if err != nil {
-		//log.Fatalf("Failed to create Kafka repository: %v", err)
+		//log.Fatalf("Failed to create Kafka http: %v", err)
 	}
 	defer kafkaRepo.Close()
 
 	// Create a payload
-	payload := domain.Payload{
-		KafkaPayload: domain.KafkaPayload{Key: "somekey"},
-		Headers:      map[string]string{"correlation_id": "123456"},
-		Content:      []byte("Hello, Kafka!"),
+	payload := kafka.Payload{
+		Key:     "somekey",
+		Headers: map[string]string{"correlation_id": "123456"},
+		Content: []byte("Hello, Kafka!"),
 	}
 
 	// Send the message
@@ -56,31 +54,27 @@ func main() {
 package main
 
 import (
-	"anysher/internal/domain"
-	"anysher/internal/infrastructure/repository"
 	"context"
+	"github.com/narumayase/anysher/http"
 	"log"
-	"net/http"
+	nethttp "net/http"
 )
 
 func main() {
 	// Create HTTP configuration
-	cfg := config.NewHTTPConfiguration("info")
-	
+	cfg := http.NewConfiguration("info")
+
 	// Create a new HTTP client
-	httpClient := repository.NewHttpClient(&http.Client{}, cfg)
+	httpClient := http.NewClient(&nethttp.Client{}, cfg)
 
 	// Create a payload
-	payload := domain.Payload{
-		HTTPPayload:  domain.HTTPPayload{
-			URL:   "http://localhost:8080",
-			Token: "a_bearer_token",
-		},
-		Headers:      map[string]string{"Content-Type": "application/json"},
-		Content:      []byte("{\"Hello, HTTP!\"}"),
+	payload := http.Payload{
+		URL:   "http://localhost:8080",
+		Token: "a_bearer_token",
+		Headers: map[string]string{"Content-Type": "application/json"},
+		Content: []byte("{\"Hello, HTTP!\"}"),
 	}
-
-	// Send the message
+	// Post the payload
 	if _, err := httpClient.Post(context.Background(), payload); err != nil {
 		log.Printf("Failed to send message via HTTP: %v", err)
 	}

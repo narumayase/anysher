@@ -1,4 +1,4 @@
-package config
+package kafka
 
 import (
 	"github.com/rs/zerolog"
@@ -12,16 +12,8 @@ type Config struct {
 	LogLevel    string
 }
 
-// NewHTTPConfiguration creates configuration for HTTP implementation
-func NewHTTPConfiguration(logLevel string) Config {
-	setLogLevel(logLevel)
-	return Config{
-		LogLevel: logLevel,
-	}
-}
-
-// NewKafkaConfiguration create configuration for Kafka implementation
-func NewKafkaConfiguration(KafkaBroker string, KafkaTopic string, logLevel string) Config {
+// NewConfiguration create configuration for Kafka implementation
+func NewConfiguration(KafkaBroker string, KafkaTopic string, logLevel string) Config {
 	setLogLevel(logLevel)
 	return Config{
 		KafkaBroker: KafkaBroker,
