@@ -57,5 +57,6 @@ func (c *Client) Post(ctx context.Context, payload Payload) (*http.Response, err
 		log.Err(err).Msgf("Failed to send message via HTTP: %v", resp)
 		return nil, fmt.Errorf("failed to execute request: %w", err)
 	}
+	log.Debug().Msgf("API status code: %d", resp.StatusCode)
 	return resp, nil
 }
