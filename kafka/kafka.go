@@ -63,6 +63,8 @@ func (r *Repository) Send(ctx context.Context, payload Message) error {
 		})
 	}
 	log.Debug().Msgf("sending message to Kafka: %v", payload)
+	log.Info().Msgf("sending headers to Kafka: %v", payload.Headers)
+	log.Info().Msgf("sending key to Kafka: %v", payload.Key)
 
 	deliveryChan := make(chan kafka.Event)
 	err := r.producer.Produce(&kafka.Message{
@@ -82,7 +84,7 @@ func (r *Repository) Send(ctx context.Context, payload Message) error {
 	if m.TopicPartition.Error != nil {
 		return fmt.Errorf("delivery failed: %v", m.TopicPartition.Error)
 	}
-	log.Debug().Msgf("delivered message to topic %s [%d] at offset %v",
+	log.Info().Msgf("delivered message to topic %s [%d] at offset %v",
 		*m.TopicPartition.Topic, m.TopicPartition.Partition, m.TopicPartition.Offset)
 
 	close(deliveryChan)
