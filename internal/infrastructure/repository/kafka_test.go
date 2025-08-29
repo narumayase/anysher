@@ -10,7 +10,7 @@ import (
 )
 
 func TestNewKafkaRepository_KafkaDisabled(t *testing.T) {
-	cfg := config.Config{KafkaEnabled: false}
+	cfg := config.Config{}
 	repo, err := NewKafkaRepository(cfg)
 	assert.NoError(t, err)
 	assert.Nil(t, repo)
@@ -21,7 +21,9 @@ func TestKafkaRepository_Produce_NilProducer(t *testing.T) {
 	ctx := context.Background()
 
 	payload := domain.Payload{
-		Key:     "key",
+		KafkaPayload: domain.KafkaPayload{
+			Key: "key",
+		},
 		Content: []byte("test message"),
 	}
 
