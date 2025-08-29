@@ -1,57 +1,37 @@
 package config
 
 import (
-	"github.com/joho/godotenv"
 	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
-	"os"
 	"strings"
 )
 
 // Config contains the application configuration
 type Config struct {
-	Port        string
 	KafkaBroker string
 	KafkaTopic  string
-	APIEndpoint string
+	LogLevel    string
 }
 
-// Load loads configuration from environment variables or an .env file
-func Load() Config {
-	setLogLevel()
-	// Load .env file if it exists (ignore error if file doesn't exist)
-	if err := godotenv.Load(); err != nil {
-		log.Printf("No .env file found or error loading .env file: %v", err)
-	}
-
+// NewHTTPConfiguration creates configuration for HTTP implementation
+func NewHTTPConfiguration(logLevel string) Config {
+	setLogLevel(logLevel)
 	return Config{
-		Port:        getEnv("PORT", "8080"),
-		KafkaBroker: getEnv("KAFKA_BROKER", "localhost:9092"),
-		KafkaTopic:  getEnv("KAFKA_TOPIC", "anysher-topic"),
-		APIEndpoint: getEnv("API_ENDPOINT", "http://localhost:8080"),
+		LogLevel: logLevel,
 	}
 }
 
-// getEnv gets an environment variable or returns a default value
-func getEnv(key, defaultValue string) string {
-	if value := os.Getenv(key); value != "" {
-		log.Debug().Msgf("ENV %s: %v", key, value)
-		return value
+// NewKafkaConfiguration create configuration for Kafka implementation
+func NewKafkaConfiguration(KafkaBroker string, KafkaTopic string, logLevel string) Config {
+	setLogLevel(logLevel)
+	return Config{
+		KafkaBroker: KafkaBroker,
+		KafkaTopic:  KafkaTopic,
+		LogLevel:    logLevel,
 	}
-	return defaultValue
 }
 
-// getEnvAsBool gets an environment variable as a boolean or returns a default value
-func getEnvAsBool(key string, defaultValue bool) bool {
-	if value := os.Getenv(key); value != "" {
-		log.Debug().Msgf("ENV %s: %v", key, value)
-		return strings.ToLower(value) == "true"
-	}
-	return defaultValue
-}
-
-// setLogLevel sets the log level defined in LOG_LEVEL environment variable
-func setLogLevel() {
+// setLogLevel sets the log level defined
+func setLogLevel(logLevel string) {
 	levels := map[string]zerolog.Level{
 		"debug": zerolog.DebugLevel,
 		"info":  zerolog.InfoLevel,
@@ -60,7 +40,7 @@ func setLogLevel() {
 		"fatal": zerolog.FatalLevel,
 		"panic": zerolog.PanicLevel,
 	}
-	levelEnv := strings.ToLower(getEnv("LOG_LEVEL", "info"))
+	levelEnv := strings.ToLower(logLevel)
 
 	level, ok := levels[levelEnv]
 	if !ok {

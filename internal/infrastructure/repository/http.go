@@ -3,45 +3,60 @@ package repository
 import (
 	"anysher/config"
 	"anysher/internal/domain"
-	"anysher/internal/infrastructure/client"
+	"bytes"
 	"context"
 	"fmt"
 	"github.com/rs/zerolog/log"
 	"net/http"
 )
 
-// HTTPRepositoryImpl implements the domain.HTTPRepository interface using an HTTP client.
-type HTTPRepositoryImpl struct {
-	config     config.Config
-	httpClient client.HttpClient
+// HTTPClientImpl HttpClientImpl implements HttpClient interface for making HTTP requests
+type HTTPClientImpl struct {
+	client *http.Client
+	config config.Config
 }
 
-// NewHTTPRepository creates a new HTTPRepositoryImpl.
-func NewHTTPRepository(
-	config config.Config,
-	httpClient client.HttpClient) domain.ProducerRepository {
-	return &HTTPRepositoryImpl{
-		httpClient: httpClient,
-		config:     config,
+// HttpClient defines the interface for making HTTP requests
+type HttpClient interface {
+	Post(ctx context.Context, payload domain.Payload) (*http.Response, error)
+}
+
+// NewHttpClient creates a new HTTP client with bearer token authentication
+func NewHttpClient(client *http.Client, config config.Config) HttpClient {
+	return &HTTPClientImpl{
+		client: client,
+		config: config,
 	}
 }
 
-// Send sends the payload to the configured API endpoint.
-func (h *HTTPRepositoryImpl) Send(ctx context.Context, payload domain.Payload) error {
-	resp, err := h.httpClient.Post(ctx, payload.Headers, payload.Content, h.config.APIEndpoint)
+// Post sends a POST request with JSON payload and bearer token authentication
+func (c *HTTPClientImpl) Post(ctx context.Context, payload domain.Payload) (*http.Response, error) {
+	payloadContent := payload.Content
+	url := payload.URL
+	headers := payload.Headers
+
+	log.Debug().Msgf("payload to send: %s", string(payloadContent))
+	log.Debug().Msgf("url %s", url)
+
+	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(payloadContent))
 	if err != nil {
-		return err
+		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
-	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	for key, value := range headers {
+		// Set headers
+		req.Header.Set(key, value)
 	}
-	log.Info().Msgf("API response status: %s", resp.Status)
+	log.Debug().Msgf("headers: to send to %s %+v", url, req.Header)
 
-	return nil
-}
+	// Set headers
+	req.Header.Set("Authorization", "Bearer "+payload.Token)
 
-func (h *HTTPRepositoryImpl) Close() {
-	log.Warn().Msg("HTTPRepositoryImpl closed")
+	// Execute request
+	resp, err := c.client.Do(req)
+	if err != nil {
+		log.Err(err).Msgf("Failed to send message via HTTP: %v", resp)
+		return nil, fmt.Errorf("failed to execute request: %w", err)
+	}
+	return resp, nil
 }

@@ -1,108 +1,88 @@
-# anysher - Kafka and HTTP integration lib
+# anysher
 
-este proyecto provee una librería para enviar mensajitos de manera configurable, puede enviar mensajes json a kafka o tmb por post http.
+A Go library that provides a flexible way to create repositories for sending messages. It offers two main implementations: one for sending messages to a Kafka topic and another for sending messages to an HTTP endpoint. The desired implementation is chosen based on the provided configuration.
 
 ## Features
 
-- 
+*   **`ProducerRepository` Interface**: Defines a common interface for sending messages, allowing for interchangeable implementations.
+*   **Kafka Implementation**: Includes a `KafkaRepository` that sends messages to a specified Kafka topic.
+*   **HTTP Implementation**: Includes an `HTTPRepository` that sends messages to a specified HTTP endpoint.
 
-### Prerequisites
+## Usage
 
-- Go 1.21 or higher
-- Kafka (optional, for Kafka integration)
+To use the library, you can create an instance of either `KafkaRepository` or `HTTPRepository`, depending on your needs.
 
-## 🚀 Installation
+### Example: Creating a Kafka Repository
 
-1. Install dependencies:
+```go
+package main
 
-```bash
-go mod tidy
+import (
+	"anysher/config"
+	"anysher/internal/domain"
+	"anysher/internal/infrastructure/repository"
+	"context"
+	"github.com/rs/zerolog/log"
+)
+
+func main() {
+	// Create Kafka configuration
+	cfg := config.NewKafkaConfiguration("localhost:9092","a-topic", "info")
+
+	// Create a new Kafka repository
+	kafkaRepo, err := repository.NewKafkaRepository(cfg)
+	if err != nil {
+		//log.Fatalf("Failed to create Kafka repository: %v", err)
+	}
+	defer kafkaRepo.Close()
+
+	// Create a payload
+	payload := domain.Payload{
+		KafkaPayload: domain.KafkaPayload{Key: "somekey"},
+		Headers:      map[string]string{"correlation_id": "123456"},
+		Content:      []byte("Hello, Kafka!"),
+	}
+
+	// Send the message
+	if err := kafkaRepo.Send(context.Background(), payload); err != nil {
+		log.Err(err).Msg("Failed to send message to Kafka")
+	}
+}
 ```
 
-2. Configure environment variables:
+### Example: Creating an HTTP Repository
 
-```bash
-cp env.example .env
-# Edit .env with the values described below.
+```go
+package main
+
+import (
+	"anysher/internal/domain"
+	"anysher/internal/infrastructure/repository"
+	"context"
+	"log"
+	"net/http"
+)
+
+func main() {
+	// Create HTTP configuration
+	cfg := config.NewHTTPConfiguration("info")
+	
+	// Create a new HTTP client
+	httpClient := repository.NewHttpClient(&http.Client{}, cfg)
+
+	// Create a payload
+	payload := domain.Payload{
+		HTTPPayload:  domain.HTTPPayload{
+			URL:   "http://localhost:8080",
+			Token: "a_bearer_token",
+		},
+		Headers:      map[string]string{"Content-Type": "application/json"},
+		Content:      []byte("{\"Hello, HTTP!\"}"),
+	}
+
+	// Send the message
+	if _, err := httpClient.Post(context.Background(), payload); err != nil {
+		log.Printf("Failed to send message via HTTP: %v", err)
+	}
+}
 ```
-
-3. Run the application:
-
-```bash
-go run main.go
-```
-
-## 🔧 Configuration
-
-### Environment Variables
-
-Create a `.env` file based on `env.example`:
-
-- `API_ENDPOINT`: API endpoint to send payload (default: https://api.groq.com/openai/v1/responses)
-- `PORT`: Server port (default: 8080)
-- `LOG_LEVEL`: Log level (debug, info, warn, error, fatal, panic - default: info)
-- `KAFKA_BROKER`: Comma-separated list of Kafka brokers
-- `KAFKA_TOPIC`: Kafka topic to send events to
-
-### Usage
-
-//TODO 
-
-## 🎗️ Architecture
-
-This project follows Clean Architecture principles:
-
-- **Domain**: Entities, repository interfaces, and use cases
-- **Application**: Implementation of use cases
-- **Infrastructure**: OpenAI and Groq repository implementations
-- **Interfaces**: HTTP controllers and routers
-
-## 📁 Project Structure
-
-```
-anysher/
-├── internal/             # Project-specific code
-│   ├── infrastructure/   # Repository implementations
-├── go.mod                # Go dependencies
-├── README_ES.md          # README in spanish
-└── README.md             # This file
-```
-
-## 🧪 Testing
-
-### Running Tests
-
-To run all tests:
-
-```bash
-go test ./...
-```
-
-### Test Coverage
-
-To check test coverage (excluding mocks):
-
-```bash
-# Generate coverage report
-go test -coverprofile=coverage.out ./...
-
-# View coverage report in terminal
-go tool cover -func=coverage.out
-
-# Generate HTML coverage report
-go tool cover -html=coverage.out -o coverage.html
-
-# View coverage excluding mocks
-go test -coverprofile=coverage.out ./... && \
-go tool cover -func=coverage.out | grep -v "mocks"
-```
-
-### Running Benchmarks
-
-```bash
-go test -bench=. ./...
-```
-
-## BackLog
-
-- [x] Unit Tests
