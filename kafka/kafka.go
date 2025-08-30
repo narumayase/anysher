@@ -69,9 +69,9 @@ func (r *Repository) Send(ctx context.Context, payload Message) error {
 			Key: k, Value: []byte(v),
 		})
 	}
-	log.Debug().Msgf("sending message to Kafka: %v", payload)
+	log.Debug().Msgf("sending message content Kafka: %s", string(payload.Content))
 	log.Info().Msgf("sending headers to Kafka: %v", payload.Headers)
-	log.Info().Msgf("sending key to Kafka: %v", payload.Key)
+	log.Info().Msgf("sending key to Kafka: %s", payload.Key)
 
 	deliveryChan := make(chan kafka.Event)
 	err := r.producer.Produce(&kafka.Message{
