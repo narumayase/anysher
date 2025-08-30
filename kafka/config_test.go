@@ -7,15 +7,43 @@ import (
 )
 
 func TestNewConfiguration(t *testing.T) {
-	broker := "localhost:9092"
-	topic := "test-topic"
-	logLevel := "debug"
+	tests := []struct {
+		name        string
+		broker      string
+		topic       string
+		logLevel    string
+		expectedCfg Config
+	}{
+		{
+			name:     "Valid configuration",
+			broker:   "localhost:9092",
+			topic:    "test-topic",
+			logLevel: "debug",
+			expectedCfg: Config{
+				KafkaBroker: "localhost:9092",
+				KafkaTopic:  "test-topic",
+				LogLevel:    "debug",
+			},
+		},
+		{
+			name:     "Invalid log level string is stored",
+			broker:   "localhost:9092",
+			topic:    "test-topic",
+			logLevel: "invalid",
+			expectedCfg: Config{
+				KafkaBroker: "localhost:9092",
+				KafkaTopic:  "test-topic",
+				LogLevel:    "invalid",
+			},
+		},
+	}
 
-	config := NewConfiguration(broker, topic, logLevel)
-
-	assert.Equal(t, broker, config.KafkaBroker)
-	assert.Equal(t, topic, config.KafkaTopic)
-	assert.Equal(t, logLevel, config.LogLevel)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := NewConfiguration(tt.broker, tt.topic, tt.logLevel)
+			assert.Equal(t, tt.expectedCfg, cfg)
+		})
+	}
 }
 
 func TestSetLogLevel(t *testing.T) {

@@ -15,6 +15,7 @@ type Producer interface {
 	Close()
 }
 
+// Message represents the structure of a message to be sent to Kafka.
 type Message struct {
 	Key     string
 	Headers map[string]string
@@ -27,6 +28,9 @@ type Repository struct {
 	topic    string
 }
 
+// NewRepository creates a new Kafka repository instance.
+// It initializes a Kafka producer if a broker is configured.
+// If KafkaBroker is empty, Kafka functionality is disabled and a nil repository is returned.
 func NewRepository(cfg Config) (*Repository, error) {
 	if cfg.KafkaBroker == "" {
 		log.Warn().Msg("Kafka broker is not configured; Kafka is disabled.")
@@ -45,6 +49,8 @@ func NewRepository(cfg Config) (*Repository, error) {
 	}, nil
 }
 
+// newProducer is a variable that holds the function to create a new Kafka producer.
+// This is primarily used for mocking in tests.
 var newProducer func(configMap *kafka.ConfigMap) (Producer, error) = func(configMap *kafka.ConfigMap) (Producer, error) {
 	return kafka.NewProducer(configMap)
 }
@@ -57,6 +63,7 @@ func (r *Repository) Send(ctx context.Context, payload Message) error {
 	}
 
 	var kafkaHeaders []kafka.Header
+	// Convert message headers to Kafka headers format.
 	for k, v := range payload.Headers {
 		kafkaHeaders = append(kafkaHeaders, kafka.Header{
 			Key: k, Value: []byte(v),
@@ -78,6 +85,7 @@ func (r *Repository) Send(ctx context.Context, payload Message) error {
 		return fmt.Errorf("failed to produce message: %w", err)
 	}
 
+	// Wait for message delivery report.
 	e := <-deliveryChan
 	m := e.(*kafka.Message)
 

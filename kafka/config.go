@@ -5,14 +5,16 @@ import (
 	"strings"
 )
 
-// Config contains the application configuration
+// Config contains the application configuration for Kafka.
 type Config struct {
 	KafkaBroker string
 	KafkaTopic  string
 	LogLevel    string
 }
 
-// NewConfiguration create configuration for Kafka implementation
+// NewConfiguration creates a new Config instance for Kafka implementation.
+// It takes Kafka broker address, topic, and desired log level as input.
+// The provided logLevel string is used to set the global zerolog level.
 func NewConfiguration(KafkaBroker string, KafkaTopic string, logLevel string) Config {
 	setLogLevel(logLevel)
 	return Config{
@@ -22,7 +24,8 @@ func NewConfiguration(KafkaBroker string, KafkaTopic string, logLevel string) Co
 	}
 }
 
-// setLogLevel sets the log level defined
+// setLogLevel sets the global zerolog log level based on the provided string.
+// If the logLevel string is not recognized, it defaults to zerolog.InfoLevel.
 func setLogLevel(logLevel string) {
 	levels := map[string]zerolog.Level{
 		"debug": zerolog.DebugLevel,

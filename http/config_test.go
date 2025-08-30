@@ -6,6 +6,7 @@ import (
 	"testing"
 )
 
+// TestNewConfiguration tests the NewConfiguration function.
 func TestNewConfiguration(t *testing.T) {
 	logLevel := "debug"
 
@@ -14,6 +15,7 @@ func TestNewConfiguration(t *testing.T) {
 	assert.Equal(t, logLevel, config.LogLevel)
 }
 
+// TestSetLogLevel tests the setLogLevel function.
 func TestSetLogLevel(t *testing.T) {
 	tests := []struct {
 		logLevel    string

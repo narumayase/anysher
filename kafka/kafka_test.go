@@ -146,3 +146,25 @@ func TestKafkaRepository_Close(t *testing.T) {
 	repo.Close()
 	assert.True(t, closed)
 }
+
+func TestKafkaRepository_Send_NoHeaders(t *testing.T) {
+	mockProducer := &mocks.MockProducer{
+		ProduceFunc: func(msg *kafka.Message, deliveryChan chan kafka.Event) error {
+			go func() {
+				deliveryChan <- &kafka.Message{TopicPartition: msg.TopicPartition}
+			}()
+			return nil
+		},
+	}
+	repo := &Repository{producer: mockProducer, topic: "test-topic"}
+	ctx := context.Background()
+
+	payload := Message{
+		Key:     "key",
+		Content: []byte("test message without headers"),
+	}
+
+	err := repo.Send(ctx, payload)
+	assert.NoError(t, err)
+	// Optionally, you could add assertions here to check if headers were indeed empty in the produced message
+}

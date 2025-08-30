@@ -5,12 +5,14 @@ import (
 	"strings"
 )
 
-// Config contains the application configuration
+// Config contains the application configuration for HTTP.
 type Config struct {
 	LogLevel string
 }
 
-// NewConfiguration creates configuration for HTTP implementation
+// NewConfiguration creates a new Config instance for HTTP implementation.
+// It takes the desired log level as input.
+// The provided logLevel string is used to set the global zerolog level.
 func NewConfiguration(logLevel string) Config {
 	setLogLevel(logLevel)
 	return Config{
@@ -18,7 +20,8 @@ func NewConfiguration(logLevel string) Config {
 	}
 }
 
-// setLogLevel sets the log level defined
+// setLogLevel sets the global zerolog log level based on the provided string.
+// If the logLevel string is not recognized, it defaults to zerolog.InfoLevel.
 func setLogLevel(logLevel string) {
 	levels := map[string]zerolog.Level{
 		"debug": zerolog.DebugLevel,

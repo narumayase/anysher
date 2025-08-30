@@ -20,6 +20,7 @@ func (m *MockRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) 
 	return m.RoundTripFunc(req)
 }
 
+// TestHttpClientImpl_Post tests the Post method of the Client.
 func TestHttpClientImpl_Post(t *testing.T) {
 	t.Run("successful POST request", func(t *testing.T) {
 		// Create a test HTTP server
