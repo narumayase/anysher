@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"bytes"
+	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	anysherhttp "github.com/narumayase/anysher/http"
@@ -18,6 +19,12 @@ const (
 type bodyCaptureWriter struct {
 	gin.ResponseWriter
 	body *bytes.Buffer
+}
+
+type Message struct {
+	Key     string            `json:"key"`
+	Headers map[string]string `json:"headers"`
+	Content []byte            `json:"content"`
 }
 
 // Sender middleware sends the request payload to the gateway after the handler has run.
@@ -55,7 +62,14 @@ func Sender() gin.HandlerFunc {
 		correlationID := c.Request.Header.Get(correlationIdHeader)
 		routingID := c.Request.Header.Get(routingIdHeader)
 
-		_, err := httpClient.Post(ctx, anysherhttp.Payload{
+		payloadBytes, err := json.Marshal(Message{
+			Content: responseBody,
+		})
+		if err != nil {
+			log.Ctx(ctx).Error().Err(err).Msg("failed to marshal response payload")
+			return
+		}
+		_, err = httpClient.Post(ctx, anysherhttp.Payload{
 			URL:   config.gatewayAPIUrl,
 			Token: config.gatewayToken,
 			Headers: map[string]string{
@@ -64,7 +78,7 @@ func Sender() gin.HandlerFunc {
 				routingIdHeader:     routingID,
 				requestIdHeader:     requestID,
 			},
-			Content: responseBody,
+			Content: payloadBytes,
 		})
 		if err != nil {
 			log.Ctx(ctx).Error().Err(err).Msg("failed to send response payload to gateway")
