@@ -39,7 +39,7 @@ func (c *Client) Post(ctx context.Context, payload Payload) (*http.Response, err
 	url := payload.URL
 	headers := payload.Headers
 
-	log.Ctx(ctx).Debug().Msgf("payload to send: %s", string(payloadContent))
+	log.Ctx(ctx).Debug().Msgf("payload to send to %s: %s", url, string(payloadContent))
 
 	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(payloadContent))
 	if err != nil {
@@ -58,7 +58,7 @@ func (c *Client) Post(ctx context.Context, payload Payload) (*http.Response, err
 	// Execute the HTTP request.
 	resp, err := c.client.Do(req)
 	if err != nil {
-		log.Ctx(ctx).Err(err).Msgf("Failed to send message via HTTP: %v", resp)
+		log.Ctx(ctx).Err(err).Msgf("Failed to send message to %s via HTTP: %v", url, resp)
 		return nil, fmt.Errorf("failed to execute request: %w", err)
 	}
 	log.Ctx(ctx).Info().Msgf("API response %s status code: %d", url, resp.StatusCode)

@@ -3,12 +3,46 @@ package kafka
 import (
 	"context"
 	"errors"
-	"github.com/narumayase/anysher/kafka/mocks"
 	"testing"
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/stretchr/testify/assert"
 )
+
+// MockProducer is a mock implementation of the Producer interface.
+type MockProducer struct {
+	ProduceFunc func(msg *kafka.Message, deliveryChan chan kafka.Event) error
+	EventsFunc  func() chan kafka.Event
+	FlushFunc   func(timeoutMs int) int
+	CloseFunc   func()
+}
+
+func (m *MockProducer) Produce(msg *kafka.Message, deliveryChan chan kafka.Event) error {
+	if m.ProduceFunc != nil {
+		return m.ProduceFunc(msg, deliveryChan)
+	}
+	return nil
+}
+
+func (m *MockProducer) Events() chan kafka.Event {
+	if m.EventsFunc != nil {
+		return m.EventsFunc()
+	}
+	return nil
+}
+
+func (m *MockProducer) Flush(timeoutMs int) int {
+	if m.FlushFunc != nil {
+		return m.FlushFunc(timeoutMs)
+	}
+	return 0
+}
+
+func (m *MockProducer) Close() {
+	if m.CloseFunc != nil {
+		m.CloseFunc()
+	}
+}
 
 func TestNewRepository_KafkaDisabled(t *testing.T) {
 	cfg := Config{}
@@ -40,12 +74,12 @@ func TestNewRepository_Success(t *testing.T) {
 	originalNewProducer := newProducer
 	defer func() { newProducer = originalNewProducer }()
 
-	mockProducer := &mocks.MockProducer{}
+	mockProducer := &MockProducer{}
 	newProducer = func(cm *kafka.ConfigMap) (Producer, error) {
 		return mockProducer, nil
 	}
 
-	cfg := Config{KafkaBroker: "localhost:9092"}
+	cfg := NewConfiguration("localhost:9092", "topic", "info")
 	repo, err := NewRepository(cfg)
 
 	assert.NoError(t, err)
@@ -62,7 +96,7 @@ func TestNewRepository_ProducerError(t *testing.T) {
 		return nil, expectedErr
 	}
 
-	cfg := Config{KafkaBroker: "localhost:9092"}
+	cfg := NewConfiguration("localhost:9092", "topic", "info")
 	repo, err := NewRepository(cfg)
 
 	assert.Error(t, err)
@@ -71,7 +105,7 @@ func TestNewRepository_ProducerError(t *testing.T) {
 }
 
 func TestKafkaRepository_Send_Success(t *testing.T) {
-	mockProducer := &mocks.MockProducer{
+	mockProducer := &MockProducer{
 		ProduceFunc: func(msg *kafka.Message, deliveryChan chan kafka.Event) error {
 			go func() {
 				deliveryChan <- &kafka.Message{TopicPartition: msg.TopicPartition}
@@ -93,7 +127,7 @@ func TestKafkaRepository_Send_Success(t *testing.T) {
 }
 
 func TestKafkaRepository_Send_ProduceError(t *testing.T) {
-	mockProducer := &mocks.MockProducer{
+	mockProducer := &MockProducer{
 		ProduceFunc: func(msg *kafka.Message, deliveryChan chan kafka.Event) error {
 			return errors.New("produce error")
 		},
@@ -112,7 +146,7 @@ func TestKafkaRepository_Send_ProduceError(t *testing.T) {
 }
 
 func TestKafkaRepository_Send_DeliveryError(t *testing.T) {
-	mockProducer := &mocks.MockProducer{
+	mockProducer := &MockProducer{
 		ProduceFunc: func(msg *kafka.Message, deliveryChan chan kafka.Event) error {
 			go func() {
 				deliveryChan <- &kafka.Message{
@@ -137,7 +171,7 @@ func TestKafkaRepository_Send_DeliveryError(t *testing.T) {
 
 func TestKafkaRepository_Close(t *testing.T) {
 	closed := false
-	mockProducer := &mocks.MockProducer{
+	mockProducer := &MockProducer{
 		CloseFunc: func() {
 			closed = true
 		},
@@ -148,7 +182,7 @@ func TestKafkaRepository_Close(t *testing.T) {
 }
 
 func TestKafkaRepository_Send_NoHeaders(t *testing.T) {
-	mockProducer := &mocks.MockProducer{
+	mockProducer := &MockProducer{
 		ProduceFunc: func(msg *kafka.Message, deliveryChan chan kafka.Event) error {
 			go func() {
 				deliveryChan <- &kafka.Message{TopicPartition: msg.TopicPartition}

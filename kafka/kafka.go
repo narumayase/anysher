@@ -38,20 +38,20 @@ type Repository struct {
 // It initializes a Kafka producer if a broker is configured.
 // If KafkaBroker is empty, Kafka functionality is disabled and a nil repository is returned.
 func NewRepository(cfg Config) (*Repository, error) {
-	if cfg.KafkaBroker == "" {
+	if cfg.kafkaBroker == "" {
 		log.Warn().Msg("Kafka broker is not configured; Kafka is disabled.")
 		return nil, nil
 	}
-	p, err := newProducer(&kafka.ConfigMap{"bootstrap.servers": cfg.KafkaBroker})
+	p, err := newProducer(&kafka.ConfigMap{"bootstrap.servers": cfg.kafkaBroker})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Kafka producer: %w", err)
 	}
 
-	log.Info().Msgf("Successfully created Kafka producer for brokers: %s", cfg.KafkaBroker)
+	log.Info().Msgf("Successfully created Kafka producer for brokers: %s", cfg.kafkaBroker)
 
 	return &Repository{
 		producer: p,
-		topic:    cfg.KafkaTopic,
+		topic:    cfg.kafkaTopic,
 	}, nil
 }
 
@@ -69,9 +69,9 @@ func (r *Repository) Send(ctx context.Context, payload Message) error {
 			Key: k, Value: []byte(v),
 		})
 	}
-	log.Ctx(ctx).Debug().Msgf("sending message content Kafka: %s", string(payload.Content))
-	log.Ctx(ctx).Info().Msgf("sending headers to Kafka: %v", payload.Headers)
-	log.Ctx(ctx).Info().Msgf("sending key to Kafka: %s", payload.Key)
+	log.Ctx(ctx).Debug().Msgf("sending message content to Kafka topic %s: %s", r.topic, string(payload.Content))
+	log.Ctx(ctx).Info().Msgf("sending headers to Kafka topic %s: %v", r.topic, payload.Headers)
+	log.Ctx(ctx).Info().Msgf("sending key to Kafka topic %s: %s", r.topic, payload.Key)
 
 	deliveryChan := make(chan kafka.Event)
 	err := r.producer.Produce(&kafka.Message{
@@ -82,7 +82,7 @@ func (r *Repository) Send(ctx context.Context, payload Message) error {
 	}, deliveryChan)
 
 	if err != nil {
-		return fmt.Errorf("failed to produce message: %w", err)
+		return fmt.Errorf("failed to produce message to Kafka topic %s: %w", r.topic, err)
 	}
 
 	// Wait for message delivery report.
@@ -90,7 +90,7 @@ func (r *Repository) Send(ctx context.Context, payload Message) error {
 	m := e.(*kafka.Message)
 
 	if m.TopicPartition.Error != nil {
-		return fmt.Errorf("delivery failed: %v", m.TopicPartition.Error)
+		return fmt.Errorf("delivery failed to Kafka topic %s: %v", r.topic, m.TopicPartition.Error)
 	}
 	log.Ctx(ctx).Info().Msgf("delivered message to topic %s [%d] at offset %v",
 		*m.TopicPartition.Topic, m.TopicPartition.Partition, m.TopicPartition.Offset)
