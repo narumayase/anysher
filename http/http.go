@@ -39,7 +39,7 @@ func (c *Client) Post(ctx context.Context, payload Payload) (*http.Response, err
 	url := payload.URL
 	headers := payload.Headers
 
-	log.Debug().Msgf("payload to send: %s", string(payloadContent))
+	log.Ctx(ctx).Debug().Msgf("payload to send: %s", string(payloadContent))
 
 	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(payloadContent))
 	if err != nil {
@@ -50,7 +50,7 @@ func (c *Client) Post(ctx context.Context, payload Payload) (*http.Response, err
 	for key, value := range headers {
 		req.Header.Set(key, value)
 	}
-	log.Debug().Msgf("headers: to send to %s %+v", url, req.Header)
+	log.Ctx(ctx).Debug().Msgf("headers: to send to %s %+v", url, req.Header)
 
 	// Set Authorization header with Bearer token.
 	req.Header.Set("Authorization", "Bearer "+payload.Token)
@@ -58,9 +58,9 @@ func (c *Client) Post(ctx context.Context, payload Payload) (*http.Response, err
 	// Execute the HTTP request.
 	resp, err := c.client.Do(req)
 	if err != nil {
-		log.Err(err).Msgf("Failed to send message via HTTP: %v", resp)
+		log.Ctx(ctx).Err(err).Msgf("Failed to send message via HTTP: %v", resp)
 		return nil, fmt.Errorf("failed to execute request: %w", err)
 	}
-	log.Info().Msgf("API response %s status code: %d", url, resp.StatusCode)
+	log.Ctx(ctx).Info().Msgf("API response %s status code: %d", url, resp.StatusCode)
 	return resp, nil
 }

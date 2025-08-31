@@ -7,6 +7,12 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// newProducer is a variable that holds the function to create a new Kafka producer.
+// This is primarily used for mocking in tests.
+var newProducer = func(configMap *kafka.ConfigMap) (Producer, error) {
+	return kafka.NewProducer(configMap)
+}
+
 // Producer is an interface that wraps the confluent-kafka-go producer.
 type Producer interface {
 	Produce(msg *kafka.Message, deliveryChan chan kafka.Event) error
@@ -49,16 +55,10 @@ func NewRepository(cfg Config) (*Repository, error) {
 	}, nil
 }
 
-// newProducer is a variable that holds the function to create a new Kafka producer.
-// This is primarily used for mocking in tests.
-var newProducer func(configMap *kafka.ConfigMap) (Producer, error) = func(configMap *kafka.ConfigMap) (Producer, error) {
-	return kafka.NewProducer(configMap)
-}
-
 // Send a message to a Kafka topic.
 func (r *Repository) Send(ctx context.Context, payload Message) error {
 	if r.producer == nil {
-		log.Warn().Msg("Kafka producer is not initialized; cannot send messages.")
+		log.Ctx(ctx).Warn().Msg("Kafka producer is not initialized; cannot send messages.")
 		return nil
 	}
 
@@ -69,9 +69,9 @@ func (r *Repository) Send(ctx context.Context, payload Message) error {
 			Key: k, Value: []byte(v),
 		})
 	}
-	log.Debug().Msgf("sending message content Kafka: %s", string(payload.Content))
-	log.Info().Msgf("sending headers to Kafka: %v", payload.Headers)
-	log.Info().Msgf("sending key to Kafka: %s", payload.Key)
+	log.Ctx(ctx).Debug().Msgf("sending message content Kafka: %s", string(payload.Content))
+	log.Ctx(ctx).Info().Msgf("sending headers to Kafka: %v", payload.Headers)
+	log.Ctx(ctx).Info().Msgf("sending key to Kafka: %s", payload.Key)
 
 	deliveryChan := make(chan kafka.Event)
 	err := r.producer.Produce(&kafka.Message{
@@ -92,7 +92,7 @@ func (r *Repository) Send(ctx context.Context, payload Message) error {
 	if m.TopicPartition.Error != nil {
 		return fmt.Errorf("delivery failed: %v", m.TopicPartition.Error)
 	}
-	log.Info().Msgf("delivered message to topic %s [%d] at offset %v",
+	log.Ctx(ctx).Info().Msgf("delivered message to topic %s [%d] at offset %v",
 		*m.TopicPartition.Topic, m.TopicPartition.Partition, m.TopicPartition.Offset)
 
 	close(deliveryChan)
