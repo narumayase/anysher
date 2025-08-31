@@ -3,6 +3,7 @@ package log
 import (
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
+	"os"
 	"testing"
 )
 
@@ -24,7 +25,8 @@ func TestSetLogLevel(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.logLevel, func(t *testing.T) {
-			SetLogLevel(tt.logLevel)
+			os.Setenv("LOG_LEVEL", tt.logLevel)
+			SetLogLevel()
 			assert.Equal(t, tt.expectedLvl, zerolog.GlobalLevel())
 		})
 	}

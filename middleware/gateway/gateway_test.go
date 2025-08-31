@@ -32,14 +32,9 @@ func (m *MockClient) Post(ctx context.Context, payload anysherhttp.Payload) (*ht
 func TestSenderMiddleware(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	config := gateway.NewConfig(
-		"debug",
-		true,
-		"http://mock",
-		"token",
-	)
+	config := gateway.New()
 	r := gin.New()
-	r.Use(gateway.Sender(*config))
+	r.Use(gateway.Sender(config))
 	r.POST("/test", func(c *gin.Context) {
 		c.String(200, "ok")
 	})

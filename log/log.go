@@ -2,12 +2,13 @@ package log
 
 import (
 	"github.com/rs/zerolog"
+	"os"
 	"strings"
 )
 
 // SetLogLevel sets the global zerolog log level based on the provided string.
 // If the logLevel string is not recognized, it defaults to zerolog.InfoLevel.
-func SetLogLevel(logLevel string) {
+func SetLogLevel() {
 	levels := map[string]zerolog.Level{
 		"debug": zerolog.DebugLevel,
 		"info":  zerolog.InfoLevel,
@@ -16,7 +17,7 @@ func SetLogLevel(logLevel string) {
 		"fatal": zerolog.FatalLevel,
 		"panic": zerolog.PanicLevel,
 	}
-	levelEnv := strings.ToLower(logLevel)
+	levelEnv := strings.ToLower(os.Getenv("LOG_LEVEL"))
 
 	level, ok := levels[levelEnv]
 	if !ok {

@@ -1,18 +1,63 @@
 # anysher
 
-A Go library that provides a flexible way to create repositories for sending messages. It offers two main implementations: one for sending messages to a Kafka topic and another for sending messages to an HTTP endpoint. The desired implementation is chosen based on the provided configuration.
+A Go library of reusable components for building applications. It includes HTTP and Kafka clients, Gin-Gonic middlewares, and logging utilities.
 
 ## Features
 
-*   **`ProducerRepository` Interface**: Defines a common interface for sending messages, allowing for interchangeable implementations.
-*   **Kafka Implementation**: Includes a `KafkaRepository` that sends messages to a specified Kafka topic.
-*   **HTTP Implementation**: Includes an `HTTPRepository` that sends messages to a specified HTTP endpoint.
+*   **HTTP Client**: A wrapper around Go's `net/http` client to simplify making POST HTTP requests.
+*   **Kafka Producer**: A client for sending messages to a Kafka topic.
+*   **Logging**: A helper to set the global log level for `zerolog`.
+*   **Gin Middlewares**: A collection of middlewares for the Gin-Gonic framework:
+    *   `CORS`: Configures Cross-Origin Resource Sharing.
+    *   `Logger`: Logs incoming HTTP requests.
+    *   `ErrorHandler`: Handles panics and returns a standardized JSON error response.
+    *   `HeadersToContext`: Injects request headers into the `context`.
+    *   `RequestIDToLogger`: Adds a request ID to the logger context for better traceability.
+    *   `gateway.Sender`: Sends the response to a configured gateway. 
 
 ## Usage
 
-To use the library, you can create an instance of either `KafkaRepository` or `HTTPRepository`, depending on your needs.
+The library is divided into packages. You can import the ones you need.
 
-### Example: Creating a Kafka Repository
+### Example: Using Middlewares in Gin
+
+```go
+package main
+
+import (
+	"github.com/gin-gonic/gin"
+	"github.com/narumayase/anysher/log"
+	"github.com/narumayase/anysher/middleware"
+	"github.com/narumayase/anysher/middleware/gateway"
+)
+
+func main() {
+	// Set the global log level
+	log.SetLogLevel()
+
+	// Create a new Gin router
+	router := gin.New()
+	
+	cfg := gateway.New()
+
+	// Use the middlewares
+	router.Use(middleware.RequestIDToLogger())
+	router.Use(middleware.Logger())
+	router.Use(middleware.ErrorHandler())
+	router.Use(middleware.CORS())
+	router.Use(gateway.Sender(cfg))
+	
+	// Define a sample route
+	router.GET("/hello", func(c *gin.Context) {
+		c.JSON(200, gin.H{"message": "world"})
+	})
+
+	// Start the server
+	router.Run(":8080")
+}
+```
+
+### Example: Creating a Kafka Producer
 
 ```go
 package main
@@ -25,7 +70,7 @@ import (
 
 func main() {
 	// Create Kafka configuration
-	cfg := kafka.NewConfiguration("localhost:9092", "a-topic", "info")
+	cfg := kafka.NewConfiguration()
 
 	// Create a new Kafka repository
 	kafkaRepo, err := kafka.NewRepository(cfg)
@@ -48,7 +93,7 @@ func main() {
 }
 ```
 
-### Example: Creating an HTTP Repository
+### Example: Creating an HTTP Client
 
 ```go
 package main
@@ -62,7 +107,7 @@ import (
 
 func main() {
 	// Create HTTP configuration
-	cfg := http.NewConfiguration("info")
+	cfg := http.NewConfiguration()
 
 	// Create a new HTTP client
 	httpClient := http.NewClient(&nethttp.Client{}, cfg)
@@ -72,7 +117,7 @@ func main() {
 		URL:   "http://localhost:8080",
 		Token: "a_bearer_token",
 		Headers: map[string]string{"Content-Type": "application/json"},
-		Content: []byte("{\"Hello, HTTP!\"}"),
+		Content: []byte("{"Hello, HTTP!"}"),
 	}
 	// Post the payload
 	if _, err := httpClient.Post(context.Background(), payload); err != nil {
