@@ -3,9 +3,9 @@ package gateway
 import (
 	"bytes"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	anysherhttp "github.com/narumayase/anysher/http"
 	"github.com/rs/zerolog/log"
-	"io"
 	"net/http"
 )
 
@@ -14,6 +14,11 @@ const (
 	routingIdHeader     = "X-Routing-ID"
 	requestIdHeader     = "X-Request-Id"
 )
+
+type bodyCaptureWriter struct {
+	gin.ResponseWriter
+	body *bytes.Buffer
+}
 
 // Sender middleware sends the request payload to the gateway after the handler has run.
 // It takes the configuration from environment variables:
@@ -25,36 +30,32 @@ func Sender() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		config := load()
 
-		// If gateway is disabled, skip sending
 		if !config.gatewayEnabled {
 			c.Next()
 			return
 		}
 		ctx := c.Request.Context()
-
-		// Create a new HTTP client
-		httpClient := anysherhttp.NewClient(&http.Client{}, anysherhttp.NewConfiguration())
-
-		// Read request body (store it for later)
-		body, err := io.ReadAll(c.Request.Body)
-		if err != nil {
-			log.Ctx(ctx).Error().Err(err).Msg("failed to read request body for gateway")
-			c.Next()
-			return
+		bw := &bodyCaptureWriter{
+			ResponseWriter: c.Writer,
+			body:           &bytes.Buffer{},
 		}
+		c.Writer = bw
 
-		// Restore body so the handler can still read it
-		c.Request.Body = io.NopCloser(bytes.NewReader(body))
-
-		// Run handler first
 		c.Next()
 
-		// After handler finished, send to gateway
-		correlationID, _ := ctx.Value(correlationIdHeader).(string)
-		routingID, _ := ctx.Value(routingIdHeader).(string)
-		requestID, _ := ctx.Value(requestIdHeader).(string)
+		responseBody := bw.body.Bytes()
 
-		_, postErr := httpClient.Post(ctx, anysherhttp.Payload{
+		httpClient := anysherhttp.NewClient(&http.Client{}, anysherhttp.NewConfiguration())
+
+		requestID := c.Request.Header.Get(requestIdHeader)
+		if requestID == "" {
+			// Generate a new one if not present
+			requestID = uuid.NewString()
+		}
+		correlationID := c.Request.Header.Get(correlationIdHeader)
+		routingID := c.Request.Header.Get(routingIdHeader)
+
+		_, err := httpClient.Post(ctx, anysherhttp.Payload{
 			URL:   config.gatewayAPIUrl,
 			Token: config.gatewayToken,
 			Headers: map[string]string{
@@ -63,12 +64,17 @@ func Sender() gin.HandlerFunc {
 				routingIdHeader:     routingID,
 				requestIdHeader:     requestID,
 			},
-			Content: body,
+			Content: responseBody,
 		})
-		if postErr != nil {
-			log.Ctx(ctx).Error().Err(postErr).Msg("failed to send payload to gateway")
+		if err != nil {
+			log.Ctx(ctx).Error().Err(err).Msg("failed to send response payload to gateway")
 		} else {
-			log.Ctx(ctx).Info().Msg("payload sent to gateway successfully")
+			log.Ctx(ctx).Info().Msg("response payload sent to gateway successfully")
 		}
 	}
+}
+
+func (w *bodyCaptureWriter) Write(b []byte) (int, error) {
+	w.body.Write(b)                  // Guardamos el body
+	return w.ResponseWriter.Write(b) // También lo enviamos al cliente
 }
