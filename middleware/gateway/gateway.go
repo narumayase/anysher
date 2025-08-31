@@ -21,12 +21,6 @@ type bodyCaptureWriter struct {
 	body *bytes.Buffer
 }
 
-type Message struct {
-	Key     string            `json:"key"`
-	Headers map[string]string `json:"headers"`
-	Content []byte            `json:"content"`
-}
-
 // Sender middleware sends the request payload to the gateway after the handler has run.
 // It takes the configuration from environment variables:
 // - GATEWAY_API_URL
@@ -61,6 +55,10 @@ func Sender() gin.HandlerFunc {
 		}
 		correlationID := c.Request.Header.Get(correlationIdHeader)
 		routingID := c.Request.Header.Get(routingIdHeader)
+
+		type Message struct {
+			Content []byte `json:"content"`
+		}
 
 		payloadBytes, err := json.Marshal(Message{
 			Content: responseBody,

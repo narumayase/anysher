@@ -80,7 +80,7 @@ func HeadersToContext() gin.HandlerFunc {
 		for k, v := range c.Request.Header {
 			if len(v) > 0 {
 				// Store each header's first value under its name
-				ctx = context.WithValue(ctx, k, v)
+				ctx = context.WithValue(ctx, k, v[0])
 			}
 		}
 		log.Ctx(ctx).Info().Msgf("headers received: %+v", c.Request.Header)
