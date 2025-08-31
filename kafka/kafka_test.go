@@ -79,7 +79,7 @@ func TestNewRepository_Success(t *testing.T) {
 		return mockProducer, nil
 	}
 
-	cfg := NewConfiguration("localhost:9092", "topic", "info")
+	cfg := NewConfiguration()
 	repo, err := NewRepository(cfg)
 
 	assert.NoError(t, err)
@@ -96,7 +96,7 @@ func TestNewRepository_ProducerError(t *testing.T) {
 		return nil, expectedErr
 	}
 
-	cfg := NewConfiguration("localhost:9092", "topic", "info")
+	cfg := NewConfiguration()
 	repo, err := NewRepository(cfg)
 
 	assert.Error(t, err)

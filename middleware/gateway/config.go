@@ -15,7 +15,12 @@ type Config struct {
 	gatewayToken   string
 }
 
-// Load loads configuration from environment variables or an .env file
+// load loads configuration from environment variables or an .env file
+// It takes the configuration from environment variables:
+// - GATEWAY_API_URL
+// - GATEWAY_ENABLED
+// - GATEWAY_TOKEN
+// - LOG_LEVEL
 func load() *Config {
 	// Load .env file if it exists (ignore error if file doesn't exist)
 	if err := godotenv.Load(); err != nil {

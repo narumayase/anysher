@@ -16,20 +16,24 @@ const (
 )
 
 // Sender middleware sends the request payload to the gateway after the handler has run.
+// It takes the configuration from environment variables:
+// - GATEWAY_API_URL
+// - GATEWAY_ENABLED
+// - GATEWAY_TOKEN
+// - LOG_LEVEL
 func Sender() gin.HandlerFunc {
-	config := load()
-
 	return func(c *gin.Context) {
+		config := load()
+
 		// If gateway is disabled, skip sending
 		if !config.gatewayEnabled {
 			c.Next()
 			return
 		}
-		cfg := anysherhttp.NewConfiguration(config.logLevel)
 		ctx := c.Request.Context()
 
 		// Create a new HTTP client
-		httpClient := anysherhttp.NewClient(&http.Client{}, cfg)
+		httpClient := anysherhttp.NewClient(&http.Client{}, anysherhttp.NewConfiguration())
 
 		// Read request body (store it for later)
 		body, err := io.ReadAll(c.Request.Body)

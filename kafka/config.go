@@ -15,20 +15,16 @@ type Config struct {
 }
 
 // NewConfiguration creates a new Config instance for Kafka implementation.
-// It takes Kafka broker address, topic, and desired log level as input.
-// The provided logLevel string is used to set the global zerolog level.
-func NewConfiguration(KafkaBroker string, KafkaTopic string, logLevel string) Config {
-	Load()
-	anysherlog.SetLogLevel()
-	return Config{
-		kafkaBroker: KafkaBroker,
-		kafkaTopic:  KafkaTopic,
-		logLevel:    logLevel,
-	}
+// It takes the configuration from environment variables:
+// - KAFKA_BROKER
+// - KAFKA_TOPIC
+// - LOG_LEVEL
+func NewConfiguration() Config {
+	return load()
 }
 
-// Load loads configuration from environment variables or an .env file
-func Load() Config {
+// load loads configuration from environment variables or an .env file
+func load() Config {
 	// Load .env file if it exists (ignore error if file doesn't exist)
 	if err := godotenv.Load(); err != nil {
 		log.Printf("No .env file found or error loading .env file: %v", err)
@@ -38,6 +34,7 @@ func Load() Config {
 		kafkaTopic:  getEnv("KAFKA_TOPIC", "a-topic"),
 		logLevel:    getEnv("LOG_LEVEL", "info"),
 	}
+	anysherlog.SetLogLevel()
 	return config
 }
 

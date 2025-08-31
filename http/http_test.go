@@ -36,7 +36,7 @@ func TestHttpClientImpl_Post(t *testing.T) {
 		}))
 		defer server.Close()
 
-		config := NewConfiguration("info")
+		config := NewConfiguration()
 
 		// Create a new HTTP client with the test server's URL
 		client := NewClient(server.Client(), config)
@@ -61,7 +61,7 @@ func TestHttpClientImpl_Post(t *testing.T) {
 	})
 
 	t.Run("error during http.NewRequest", func(t *testing.T) {
-		config := NewConfiguration("info")
+		config := NewConfiguration()
 		client := NewClient(&http.Client{}, config)
 
 		// Use an invalid URL to cause an error during NewRequest
@@ -84,7 +84,7 @@ func TestHttpClientImpl_Post(t *testing.T) {
 			},
 		}
 
-		config := NewConfiguration("info")
+		config := NewConfiguration()
 		mockClient := &http.Client{Transport: mockRT}
 		client := NewClient(mockClient, config)
 
