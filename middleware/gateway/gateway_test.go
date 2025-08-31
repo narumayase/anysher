@@ -1,10 +1,9 @@
-package gateway_test
+package gateway
 
 import (
 	"bytes"
 	"context"
 	anysherhttp "github.com/narumayase/anysher/http"
-	"github.com/narumayase/anysher/middleware/gateway"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -32,9 +31,8 @@ func (m *MockClient) Post(ctx context.Context, payload anysherhttp.Payload) (*ht
 func TestSenderMiddleware(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	config := gateway.New()
 	r := gin.New()
-	r.Use(gateway.Sender(config))
+	r.Use(Sender())
 	r.POST("/test", func(c *gin.Context) {
 		c.String(200, "ok")
 	})

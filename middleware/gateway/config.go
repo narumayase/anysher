@@ -15,10 +15,6 @@ type Config struct {
 	gatewayToken   string
 }
 
-func New() *Config {
-	return load()
-}
-
 // Load loads configuration from environment variables or an .env file
 func load() *Config {
 	// Load .env file if it exists (ignore error if file doesn't exist)

@@ -16,7 +16,9 @@ const (
 )
 
 // Sender middleware sends the request payload to the gateway after the handler has run.
-func Sender(config *Config) gin.HandlerFunc {
+func Sender() gin.HandlerFunc {
+	config := load()
+
 	return func(c *gin.Context) {
 		// If gateway is disabled, skip sending
 		if !config.gatewayEnabled {
