@@ -46,7 +46,7 @@ func Sender() gin.HandlerFunc {
 
 		responseBody := bw.body.Bytes()
 
-		httpClient := anysherhttp.NewClient(&http.Client{}, anysherhttp.NewConfiguration())
+		httpClient := anysherhttp.NewClient(&http.Client{})
 
 		requestID := c.Request.Header.Get(requestIdHeader)
 		if requestID == "" {

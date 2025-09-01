@@ -44,13 +44,6 @@ func (m *MockProducer) Close() {
 	}
 }
 
-func TestNewRepository_KafkaDisabled(t *testing.T) {
-	cfg := Config{}
-	repo, err := NewRepository(cfg)
-	assert.NoError(t, err)
-	assert.Nil(t, repo)
-}
-
 func TestKafkaRepository_Produce_NilProducer(t *testing.T) {
 	repo := &Repository{}
 	ctx := context.Background()
@@ -79,8 +72,8 @@ func TestNewRepository_Success(t *testing.T) {
 		return mockProducer, nil
 	}
 
-	cfg := NewConfiguration()
-	repo, err := NewRepository(cfg)
+	load()
+	repo, err := NewRepository()
 
 	assert.NoError(t, err)
 	assert.NotNil(t, repo)
@@ -96,8 +89,8 @@ func TestNewRepository_ProducerError(t *testing.T) {
 		return nil, expectedErr
 	}
 
-	cfg := NewConfiguration()
-	repo, err := NewRepository(cfg)
+	load()
+	repo, err := NewRepository()
 
 	assert.Error(t, err)
 	assert.Nil(t, repo)

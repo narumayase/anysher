@@ -25,6 +25,6 @@ func TestNewConfiguration(t *testing.T) {
 			kafkaTopic:  "test-topic",
 		},
 	}
-	cfg := NewConfiguration()
+	cfg := load()
 	assert.Equal(t, expectedConfig.expectedCfg, cfg)
 }

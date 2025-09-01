@@ -35,18 +35,18 @@ type Repository struct {
 }
 
 // NewRepository creates a new Kafka repository instance.
-// It initializes a Kafka producer if a broker is configured.
-// If KafkaBroker is empty, Kafka functionality is disabled and a nil repository is returned.
-func NewRepository(cfg Config) (*Repository, error) {
-	if cfg.kafkaBroker == "" {
-		log.Warn().Msg("Kafka broker is not configured; Kafka is disabled.")
-		return nil, nil
-	}
+// It initializes a Kafka taking the configuration from environment variables:
+// - KAFKA_BROKER
+// - KAFKA_TOPIC
+// - LOG_LEVEL
+func NewRepository() (*Repository, error) {
+	// load configuration from environment
+	cfg := load()
+
 	p, err := newProducer(&kafka.ConfigMap{"bootstrap.servers": cfg.kafkaBroker})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Kafka producer: %w", err)
 	}
-
 	log.Info().Msgf("Successfully created Kafka producer for brokers: %s", cfg.kafkaBroker)
 
 	return &Repository{

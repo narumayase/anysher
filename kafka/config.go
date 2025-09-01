@@ -13,16 +13,11 @@ type Config struct {
 	kafkaTopic  string
 }
 
-// NewConfiguration creates a new Config instance for Kafka implementation.
+// load creates a new Config instance for Kafka implementation.
 // It takes the configuration from environment variables:
 // - KAFKA_BROKER
 // - KAFKA_TOPIC
 // - LOG_LEVEL
-func NewConfiguration() Config {
-	return load()
-}
-
-// load loads configuration from environment variables or an .env file
 func load() Config {
 	// Load .env file if it exists (ignore error if file doesn't exist)
 	if err := godotenv.Load(); err != nil {

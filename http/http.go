@@ -24,10 +24,14 @@ type Client struct {
 
 // NewClient creates a new HTTP client with bearer token authentication.
 // It takes an http.Client and a Config struct as input.
-func NewClient(client *http.Client, config Config) *Client {
+// It takes the environment variable LOG_LEVEL
+func NewClient(client *http.Client) *Client {
+	// load configuration from environment
+	cfg := load()
+
 	return &Client{
 		client: client,
-		config: config,
+		config: cfg,
 	}
 }
 
