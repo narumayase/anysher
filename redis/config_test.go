@@ -28,6 +28,6 @@ func TestNewConfiguration(t *testing.T) {
 			cacheAddress:  "localhost:6380",
 		},
 	}
-	cfg := NewConfiguration()
+	cfg := load()
 	assert.Equal(t, expectedConfig.expectedCfg, cfg)
 }

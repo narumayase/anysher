@@ -15,17 +15,12 @@ type Config struct {
 	cacheDatabase int
 }
 
-// NewConfiguration creates a new Config instance for Redis implementation.
+// load loads configuration from environment variables or an .env file
 // It takes the configuration from environment variables:
 // - CACHE_ADDRESS
 // - CACHE_PASSWORD
 // - CACHE_DATABASE
 // - LOG_LEVEL
-func NewConfiguration() Config {
-	return load()
-}
-
-// load loads configuration from environment variables or an .env file
 func load() Config {
 	// Load .env file if it exists (ignore error if file doesn't exist)
 	if err := godotenv.Load(); err != nil {

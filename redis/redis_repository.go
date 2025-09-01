@@ -7,25 +7,26 @@ import (
 	"time"
 )
 
-// RedisRepository implements the CacheRepository interface using Redis.
-type RedisRepository struct {
+// Repository implements the CacheRepository interface using Redis.
+type Repository struct {
 	client *redis.Client
 }
 
-// NewRedisRepository creates a new instance of RedisRepository.
-func NewRedisRepository(config Config) *RedisRepository {
+// NewRepository creates a new instance of RedisRepository.
+func NewRepository() *Repository {
+	config := load()
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     config.cacheAddress,
 		Password: config.cachePassword,
 		DB:       config.cacheDatabase,
 	})
-	return &RedisRepository{
+	return &Repository{
 		client: rdb,
 	}
 }
 
 // Save saves the data into redis
-func (r *RedisRepository) Save(ctx context.Context, key string, data []byte) error {
+func (r *Repository) Save(ctx context.Context, key string, data []byte) error {
 	// TODO ver de hacer configurable esta duración
 	if err := r.client.Set(ctx, key, data, 24*time.Hour).Err(); err != nil {
 		log.Ctx(ctx).Error().Err(err).Msg("failed to save metadata")
@@ -36,7 +37,7 @@ func (r *RedisRepository) Save(ctx context.Context, key string, data []byte) err
 }
 
 // Get gets the data from redis
-func (r *RedisRepository) Get(ctx context.Context, key string) (string, error) {
+func (r *Repository) Get(ctx context.Context, key string) (string, error) {
 	data, err := r.client.Get(ctx, key).Result()
 	if err != nil {
 		log.Ctx(ctx).Error().Err(err).Msg("failed to fetch metadata")

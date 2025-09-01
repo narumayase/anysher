@@ -12,7 +12,7 @@ import (
 func TestRedisRepository_SaveAndGet(t *testing.T) {
 	ctx := context.Background()
 	db, mock := redismock.NewClientMock()
-	repo := &RedisRepository{client: db}
+	repo := &Repository{client: db}
 
 	key := "test:123"
 	data := []byte("hola mundo")
@@ -36,7 +36,7 @@ func TestRedisRepository_SaveAndGet(t *testing.T) {
 func TestRedisRepository_SaveRedisError(t *testing.T) {
 	ctx := context.Background()
 	db, mock := redismock.NewClientMock()
-	repo := &RedisRepository{client: db}
+	repo := &Repository{client: db}
 
 	data := []byte("hola")
 	mock.ExpectSet("key", data, 24*time.Hour).SetErr(redis.ErrClosed)
@@ -49,7 +49,7 @@ func TestRedisRepository_SaveRedisError(t *testing.T) {
 func TestRedisRepository_GetRedisError(t *testing.T) {
 	ctx := context.Background()
 	db, mock := redismock.NewClientMock()
-	repo := &RedisRepository{client: db}
+	repo := &Repository{client: db}
 
 	mock.ExpectGet("key").SetErr(redis.ErrClosed)
 
@@ -62,7 +62,7 @@ func TestRedisRepository_GetRedisError(t *testing.T) {
 func TestRedisRepository_GetKeyNotFound(t *testing.T) {
 	ctx := context.Background()
 	db, mock := redismock.NewClientMock()
-	repo := &RedisRepository{client: db}
+	repo := &Repository{client: db}
 
 	mock.ExpectGet("missing").RedisNil()
 
@@ -73,12 +73,7 @@ func TestRedisRepository_GetKeyNotFound(t *testing.T) {
 }
 
 func TestNewRedisRepository(t *testing.T) {
-	cfg := Config{
-		cacheAddress:  "localhost:6379",
-		cachePassword: "",
-		cacheDatabase: 0,
-	}
-	repo := NewRedisRepository(cfg)
+	repo := NewRepository()
 	assert.NotNil(t, repo)
 	assert.NotNil(t, repo.client)
 }
