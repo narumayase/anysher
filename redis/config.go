@@ -1,4 +1,4 @@
-package cache
+package redis
 
 import (
 	"github.com/joho/godotenv"

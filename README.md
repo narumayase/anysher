@@ -1,12 +1,13 @@
 # anysher
 
-A Go library of reusable components for building applications. It includes HTTP and Kafka clients, Gin-Gonic middlewares, and logging utilities.
+A Go library of reusable components for building applications. It includes HTTP, Kafka and Redis clients, Gin-Gonic middlewares, etc.
 
 ## Features
 
 *   **HTTP Client**: A wrapper around Go's `net/http` client to simplify making POST HTTP requests.
 *   **Kafka Producer**: A client for sending messages to a Kafka topic.
 *   **Logging**: A helper to set the global log level for `zerolog`.
+*   **Redis**: A client for saving data into Redis.
 *   **Gin Middlewares**: A collection of middlewares for the Gin-Gonic framework:
     *   `CORS`: Configures Cross-Origin Resource Sharing.
     *   `Logger`: Logs incoming HTTP requests.
@@ -37,16 +38,14 @@ func main() {
 
 	// Create a new Gin router
 	router := gin.New()
-	
-	cfg := gateway.New()
 
 	// Use the middlewares
 	router.Use(middleware.RequestIDToLogger())
 	router.Use(middleware.Logger())
 	router.Use(middleware.ErrorHandler())
 	router.Use(middleware.CORS())
-	router.Use(gateway.Sender(cfg))
-	
+	router.Use(gateway.Sender())
+
 	// Define a sample route
 	router.GET("/hello", func(c *gin.Context) {
 		c.JSON(200, gin.H{"message": "world"})
@@ -117,11 +116,43 @@ func main() {
 		URL:   "http://localhost:8080",
 		Token: "a_bearer_token",
 		Headers: map[string]string{"Content-Type": "application/json"},
-		Content: []byte("{"Hello, HTTP!"}"),
+		Content: []byte("{\"Hello, HTTP!\"}"),
 	}
 	// Post the payload
 	if _, err := httpClient.Post(context.Background(), payload); err != nil {
 		log.Printf("Failed to send message via HTTP: %v", err)
+	}
+}
+```
+
+
+### Example: Using Redis cache
+
+```go
+package main
+
+import (
+	"context"
+	"github.com/narumayase/anysher/redis"
+	"github.com/rs/zerolog/log"
+)
+
+func main() {
+	// Load configuration
+	cfg := redis.NewConfiguration()
+
+	// Create Redis repository
+	redisRepository := redis.NewRedisRepository(cfg)
+
+	// Save data
+	if err := redisRepository.Save(context.Background(), "a_key", []byte("{some_data}")); err != nil {
+		log.Panic().Msgf("Failed to send data to Redis: %v", err)
+	}
+	// Retrieve data
+	if data, err := redisRepository.Get(context.Background(), "a_key"); err != nil {
+		log.Panic().Msgf("Failed to send data to Redis: %v", err)
+	} else {
+		log.Printf("Successfully retrieve data from Redis %s", data)
 	}
 }
 ```
