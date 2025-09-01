@@ -87,6 +87,6 @@ func Sender() gin.HandlerFunc {
 }
 
 func (w *bodyCaptureWriter) Write(b []byte) (int, error) {
-	w.body.Write(b)                  // Guardamos el body
-	return w.ResponseWriter.Write(b) // También lo enviamos al cliente
+	w.body.Write(b)
+	return w.ResponseWriter.Write(b)
 }

@@ -10,7 +10,6 @@ import (
 
 type Config struct {
 	gatewayEnabled bool
-	logLevel       string
 	gatewayAPIUrl  string
 	gatewayToken   string
 }
@@ -31,7 +30,6 @@ func load() *Config {
 		gatewayAPIUrl:  getEnv("GATEWAY_API_URL", "http://anyway:9889"),
 		gatewayEnabled: getEnvAsBool("GATEWAY_ENABLED", false),
 		gatewayToken:   getEnv("GATEWAY_TOKEN", ""),
-		logLevel:       getEnv("LOG_LEVEL", "info"),
 	}
 }
 
