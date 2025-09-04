@@ -30,7 +30,7 @@ type bodyCaptureWriter struct {
 // - GATEWAY_API_URL
 // - GATEWAY_ENABLED
 // - GATEWAY_TOKEN
-// - IGNORE_ENDPOINTS -> format eg: GET:health|POST:send
+// - GATEWAY_IGNORE_ENDPOINTS -> format eg: GET:health|POST:send
 // - LOG_LEVEL
 func Sender() gin.HandlerFunc {
 	return func(c *gin.Context) {

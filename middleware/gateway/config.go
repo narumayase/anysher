@@ -26,7 +26,7 @@ type IgnoreEndpoint struct {
 // - GATEWAY_API_URL
 // - GATEWAY_ENABLED
 // - GATEWAY_TOKEN
-// - IGNORE_ENDPOINTS -> format eg: GET:health|POST:send
+// - GATEWAY_IGNORE_ENDPOINTS -> format eg: GET:health|POST:send
 // - LOG_LEVEL
 func load() *Config {
 	// Load .env file if it exists (ignore error if file doesn't exist)
