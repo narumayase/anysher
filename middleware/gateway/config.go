@@ -60,7 +60,7 @@ func getEnvAsBool(key string, defaultValue bool) bool {
 }
 
 func getIgnoreEndpoints() []IgnoreEndpoint {
-	ignore := getEnv("IGNORE_ENDPOINTS", "")
+	ignore := getEnv("GATEWAY_IGNORE_ENDPOINTS", "")
 	var ignoreList []IgnoreEndpoint
 	if ignore != "" {
 		items := strings.Split(ignore, "|")
