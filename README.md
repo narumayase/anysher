@@ -125,7 +125,6 @@ func main() {
 }
 ```
 
-
 ### Example: Using Redis cache
 
 ```go
