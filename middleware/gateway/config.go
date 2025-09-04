@@ -13,7 +13,12 @@ type Config struct {
 	gatewayAPIUrl  string
 	gatewayToken   string
 
-	ignoreEndpoints []string
+	ignoreEndpoints []IgnoreEndpoint
+}
+
+type IgnoreEndpoint struct {
+	Method string
+	Path   string
 }
 
 // load loads configuration from environment variables or an .env file
@@ -21,7 +26,7 @@ type Config struct {
 // - GATEWAY_API_URL
 // - GATEWAY_ENABLED
 // - GATEWAY_TOKEN
-// - IGNORE_ENDPOINTS
+// - IGNORE_ENDPOINTS -> format eg: GET:health|POST:send
 // - LOG_LEVEL
 func load() *Config {
 	// Load .env file if it exists (ignore error if file doesn't exist)
@@ -30,16 +35,11 @@ func load() *Config {
 	}
 	anysherlog.SetLogLevel()
 
-	ignore := getEnv("IGNORE_ENDPOINTS", "")
-	var ignoreList []string
-	if ignore != "" {
-		ignoreList = strings.Split(ignore, "|")
-	}
 	return &Config{
 		gatewayAPIUrl:   getEnv("GATEWAY_API_URL", "http://anyway:9889"),
 		gatewayEnabled:  getEnvAsBool("GATEWAY_ENABLED", false),
 		gatewayToken:    getEnv("GATEWAY_TOKEN", ""),
-		ignoreEndpoints: ignoreList,
+		ignoreEndpoints: getIgnoreEndpoints(),
 	}
 }
 
@@ -57,4 +57,24 @@ func getEnvAsBool(key string, defaultValue bool) bool {
 		return strings.ToLower(value) == "true"
 	}
 	return defaultValue
+}
+
+func getIgnoreEndpoints() []IgnoreEndpoint {
+	ignore := getEnv("IGNORE_ENDPOINTS", "")
+	var ignoreList []IgnoreEndpoint
+	if ignore != "" {
+		items := strings.Split(ignore, "|")
+		for _, item := range items {
+			parts := strings.SplitN(item, ":", 2)
+			if len(parts) != 2 {
+				log.Printf("Invalid ignore endpoint format: %s", item)
+				continue
+			}
+			ignoreList = append(ignoreList, IgnoreEndpoint{
+				Method: strings.ToUpper(parts[0]),
+				Path:   parts[1],
+			})
+		}
+	}
+	return ignoreList
 }

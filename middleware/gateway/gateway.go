@@ -30,6 +30,7 @@ type bodyCaptureWriter struct {
 // - GATEWAY_API_URL
 // - GATEWAY_ENABLED
 // - GATEWAY_TOKEN
+// - IGNORE_ENDPOINTS -> format eg: GET:health|POST:send
 // - LOG_LEVEL
 func Sender() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -41,7 +42,7 @@ func Sender() gin.HandlerFunc {
 		}
 		for _, endpoint := range config.ignoreEndpoints {
 			// ignore the configurated endpoints
-			if strings.Contains(c.Request.URL.Path, endpoint) {
+			if c.Request.Method == endpoint.Method && strings.Contains(c.Request.URL.Path, endpoint.Path) {
 				c.Next()
 				return
 			}
