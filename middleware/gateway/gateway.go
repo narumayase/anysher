@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	anysherhttp "github.com/narumayase/anysher/http"
 	"github.com/rs/zerolog/log"
+	"io/ioutil"
 	"net/http"
 )
 
@@ -68,7 +70,7 @@ func Sender() gin.HandlerFunc {
 			log.Ctx(ctx).Error().Err(err).Msg("failed to marshal response payload")
 			return
 		}
-		_, err = httpClient.Post(context.Background(), anysherhttp.Payload{
+		resp, err := httpClient.Post(context.Background(), anysherhttp.Payload{
 			URL:   config.gatewayAPIUrl,
 			Token: config.gatewayToken,
 			Headers: map[string]string{
@@ -79,11 +81,19 @@ func Sender() gin.HandlerFunc {
 			},
 			Content: payloadBytes,
 		})
+		body, _ := ioutil.ReadAll(resp.Body)
+
 		if err != nil {
 			log.Ctx(ctx).Error().Err(err).Msg("failed to send response payload to gateway")
-		} else {
-			log.Ctx(ctx).Info().Msg("response payload sent to gateway successfully")
+			return
 		}
+		if resp.StatusCode != http.StatusOK {
+			log.Ctx(ctx).Error().Err(
+				fmt.Errorf("llm status code %d body %+v", resp.StatusCode, string(body))).
+				Msg("failed to send response payload to gateway")
+			return
+		}
+		log.Ctx(ctx).Info().Msg("response payload sent to gateway successfully")
 	}
 }
 
