@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -67,7 +68,7 @@ func Sender() gin.HandlerFunc {
 			log.Ctx(ctx).Error().Err(err).Msg("failed to marshal response payload")
 			return
 		}
-		_, err = httpClient.Post(ctx, anysherhttp.Payload{
+		_, err = httpClient.Post(context.Background(), anysherhttp.Payload{
 			URL:   config.gatewayAPIUrl,
 			Token: config.gatewayToken,
 			Headers: map[string]string{
