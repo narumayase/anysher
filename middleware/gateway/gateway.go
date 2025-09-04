@@ -11,6 +11,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"io/ioutil"
 	"net/http"
+	"strings"
 )
 
 const (
@@ -38,7 +39,13 @@ func Sender() gin.HandlerFunc {
 			c.Next()
 			return
 		}
-		ctx := c.Request.Context()
+		for _, endpoint := range config.ignoreEndpoints {
+			// ignore the configurated endpoints
+			if strings.Contains(c.Request.URL.Path, endpoint) {
+				c.Next()
+				return
+			}
+		}
 		bw := &bodyCaptureWriter{
 			ResponseWriter: c.Writer,
 			body:           &bytes.Buffer{},
@@ -46,10 +53,6 @@ func Sender() gin.HandlerFunc {
 		c.Writer = bw
 
 		c.Next()
-
-		responseBody := bw.body.Bytes()
-
-		httpClient := anysherhttp.NewClient(&http.Client{})
 
 		requestID := c.Request.Header.Get(requestIdHeader)
 		if requestID == "" {
@@ -59,17 +62,20 @@ func Sender() gin.HandlerFunc {
 		correlationID := c.Request.Header.Get(correlationIdHeader)
 		routingID := c.Request.Header.Get(routingIdHeader)
 
+		ctx := c.Request.Context()
+
 		type Message struct {
 			Content []byte `json:"content"`
 		}
-
 		payloadBytes, err := json.Marshal(Message{
-			Content: responseBody,
+			Content: bw.body.Bytes(),
 		})
 		if err != nil {
 			log.Ctx(ctx).Error().Err(err).Msg("failed to marshal response payload")
 			return
 		}
+
+		httpClient := anysherhttp.NewClient(&http.Client{})
 		resp, err := httpClient.Post(context.Background(), anysherhttp.Payload{
 			URL:   config.gatewayAPIUrl,
 			Token: config.gatewayToken,

@@ -12,6 +12,8 @@ type Config struct {
 	gatewayEnabled bool
 	gatewayAPIUrl  string
 	gatewayToken   string
+
+	ignoreEndpoints []string
 }
 
 // load loads configuration from environment variables or an .env file
@@ -19,6 +21,7 @@ type Config struct {
 // - GATEWAY_API_URL
 // - GATEWAY_ENABLED
 // - GATEWAY_TOKEN
+// - IGNORE_ENDPOINTS
 // - LOG_LEVEL
 func load() *Config {
 	// Load .env file if it exists (ignore error if file doesn't exist)
@@ -26,10 +29,17 @@ func load() *Config {
 		log.Printf("No .env file found or error loading .env file: %v", err)
 	}
 	anysherlog.SetLogLevel()
+
+	ignore := getEnv("IGNORE_ENDPOINTS", "")
+	var ignoreList []string
+	if ignore != "" {
+		ignoreList = strings.Split(ignore, "|")
+	}
 	return &Config{
-		gatewayAPIUrl:  getEnv("GATEWAY_API_URL", "http://anyway:9889"),
-		gatewayEnabled: getEnvAsBool("GATEWAY_ENABLED", false),
-		gatewayToken:   getEnv("GATEWAY_TOKEN", ""),
+		gatewayAPIUrl:   getEnv("GATEWAY_API_URL", "http://anyway:9889"),
+		gatewayEnabled:  getEnvAsBool("GATEWAY_ENABLED", false),
+		gatewayToken:    getEnv("GATEWAY_TOKEN", ""),
+		ignoreEndpoints: ignoreList,
 	}
 }
 
