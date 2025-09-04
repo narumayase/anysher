@@ -76,6 +76,8 @@ func HeadersToContext() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
+		c.Request.Header.Set(requestIdHeader, getRequestId(c))
+
 		// Iterate through all headers and inject them into the context
 		for k, v := range c.Request.Header {
 			if len(v) > 0 {
@@ -100,11 +102,7 @@ func RequestIDToLogger() gin.HandlerFunc {
 		ctx := c.Request.Context()
 
 		// Look for X-Request-Id header
-		requestID := c.Request.Header.Get(requestIdHeader)
-		if requestID == "" {
-			// Generate a new one if not present
-			requestID = uuid.NewString()
-		}
+		requestID := getRequestId(c)
 
 		// Create a logger with request_id and attach it to the context
 		logger := log.With().Str("request_id", requestID).Logger()
@@ -115,4 +113,14 @@ func RequestIDToLogger() gin.HandlerFunc {
 
 		c.Next()
 	}
+}
+
+func getRequestId(c *gin.Context) string {
+	// Look for X-Request-Id header
+	requestID := c.Request.Header.Get(requestIdHeader)
+	if requestID == "" {
+		// Generate a new one if not present
+		requestID = uuid.NewString()
+	}
+	return requestID
 }
