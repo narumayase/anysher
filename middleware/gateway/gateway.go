@@ -88,12 +88,12 @@ func Sender() gin.HandlerFunc {
 			},
 			Content: payloadBytes,
 		})
-		body, _ := ioutil.ReadAll(resp.Body)
-
 		if err != nil {
 			log.Ctx(ctx).Error().Err(err).Msg("failed to send response payload to gateway")
 			return
 		}
+		body, _ := ioutil.ReadAll(resp.Body)
+
 		if resp.StatusCode != http.StatusOK {
 			log.Ctx(ctx).Error().Err(
 				fmt.Errorf("llm status code %d body %+v", resp.StatusCode, string(body))).
